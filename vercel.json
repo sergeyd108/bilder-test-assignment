@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/ecb/:path*",
+      "destination": "https://www.ecb.europa.eu/:path*"
+    }
+  ]
+}

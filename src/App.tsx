@@ -1,15 +1,24 @@
 import { BrowserRouter, Route, Routes } from 'react-router'
-import IndexPage from './pages/IndexPage'
-import FeesPage from './pages/FeesPage'
+import Layout from '@/components/Layout'
+import IndexPage from '@/pages/IndexPage'
+import FeesPage from '@/pages/FeesPage'
+import { RatesProvider } from '@/features/rates'
+import { FeesProvider } from '@/features/fees'
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path='/' element={<IndexPage />} />
-        <Route path='/fees' element={<FeesPage />} />
-      </Routes>
-    </BrowserRouter>
+    <RatesProvider>
+      <FeesProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route element={<Layout />}>
+              <Route path='/' element={<IndexPage />} />
+              <Route path='/fees' element={<FeesPage />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </FeesProvider>
+    </RatesProvider>
   )
 }
 

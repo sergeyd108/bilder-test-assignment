@@ -1,3 +1,5 @@
+import { ConversionForm } from '@/features/conversion'
+
 export default function IndexPage() {
-  return <div>Index</div>
+  return <ConversionForm />
 }
