@@ -1,96 +1,78 @@
 # Currency Converter
 
-A client-side currency conversion UI with configurable per-direction fees.
-Rates are fetched live from the European Central Bank; fees are persisted to
-`localStorage`.
+Client-side currency converter with configurable per-direction fees. Rates
+from ECB, fees persisted to `localStorage`.
 
-Stack: **React 19 + TypeScript + Vite + Tailwind / DaisyUI**.
+Stack: React 19 + TypeScript + Vite + Tailwind / DaisyUI.
 
-## Requirements
-
-- Node.js 22+
-- npm
-
-## Getting started
+## Run
 
 ```bash
 npm install
-npm run dev
+npm run dev   # http://localhost:5173
 ```
 
-Open http://localhost:5173 in your browser.
+Node.js 22+.
 
 ## Scripts
 
-| Command             | Description                                      |
-| ------------------- | ------------------------------------------------ |
-| `npm run dev`       | Start the Vite dev server (with the ECB proxy)   |
-| `npm run build`     | Type-check and produce a production build        |
-| `npm run preview`   | Serve the production build locally               |
-| `npm run typecheck` | Run `tsc -b`                                     |
-| `npm run lint`      | Run `oxlint` then `eslint`                       |
-| `npm run fmt`       | Format the codebase with `oxfmt`                 |
+| Command             | Description                               |
+| ------------------- | ----------------------------------------- |
+| `npm run dev`       | Vite dev server with the ECB proxy        |
+| `npm run build`     | Type-check and produce a production build |
+| `npm run preview`   | Serve the production build locally        |
+| `npm run typecheck` | `tsc -b`                                  |
+| `npm run lint`      | `oxlint` then `eslint`                    |
+| `npm run fmt`       | Format with `oxfmt`                       |
 
-## How it works
+## Pages
 
-### Pages
+- `/` — conversion form (amount + from/to).
+- `/fees` — fees table (add / edit / remove).
 
-- `/` &mdash; conversion form: enter an amount and pick the source/target
-  currencies; the result, fee applied and cross rate are displayed.
-- `/fees` &mdash; fees table: add, edit or remove a fee for a `(from, to)`
-  pair. Entries are persisted to `localStorage` under the `conversion-fees`
-  key.
-
-### Conversion formula
+## Conversion
 
 ```
 result = amount × (1 − fee) × rate
+rate   = rates[to] / rates[from]   // ECB rates are EUR-quoted
+fee    = configured fee for (from, to), or 0.01 default
 ```
 
-- `fee` is taken from the configured list for the exact `(from, to)`
-  direction. If no fee is configured for that direction, the **default fee of
-  `0.01` (1%)** is applied.
-- `rate` is a cross rate derived from ECB's EUR-quoted rates:
-  `rate = rates[to] / rates[from]`. This works between any two supported
-  currencies, not just from EUR &mdash; e.g. GBP → USD is computed via the
-  shared EUR base.
+Fees are direction-specific (`EUR→GBP` ≠ `GBP→EUR`), stored as fractions in
+`[0, 1]` under the `conversion-fees` key in `localStorage`.
 
-### Fees
+## Proxy
 
-- Fees are direction-specific &mdash; `EUR → GBP` and `GBP → EUR` are
-  independent entries with their own values.
-- Fees are fractions in `[0, 1]` (e.g. `0.2` means 20%).
-- All changes are written to `localStorage` immediately.
+ECB sends no CORS headers, so the app calls `/api/ecb/*` and a proxy strips
+the prefix and forwards to `https://www.ecb.europa.eu/*`:
 
-### Rates source
+- **Dev** — `vite.config.ts` → `server.proxy` (`changeOrigin: true`).
+- **Prod** — `vercel.json` → `rewrites`.
 
-Daily reference rates are fetched from the ECB XML feed:
-`https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml`.
+## Deployment
 
-The endpoint does not send CORS headers, so the Vite dev server proxies
-requests from `/api/ecb/*` to `https://www.ecb.europa.eu/*` (see
-`vite.config.ts`). All network calls happen from the browser through this
-proxy.
+Static SPA on Vercel. `.github/workflows/deploy.yml` runs on push to `main`:
+`npm ci` → `npm run lint` → `npm run typecheck` → `vercel deploy --prod`.
 
-## Configuration
+Required GitHub secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`.
 
-A single optional environment variable is supported (see `.env.example`):
+## Config
 
-| Variable            | Default | Description                                    |
-| ------------------- | ------- | ---------------------------------------------- |
-| `VITE_DEFAULT_FEE`  | `0.01`  | Fee applied when none is configured for a pair |
+| Variable           | Default | Description                                    |
+| ------------------ | ------- | ---------------------------------------------- |
+| `VITE_DEFAULT_FEE` | `0.01`  | Fee applied when none is configured for a pair |
 
-## Project layout
+## Layout
 
 ```
 src/
-  components/             shared UI primitives (Layout, Navbar, FormField)
-  constants/              app-wide constants and defaults
+  components/    shared UI (Layout, Navbar, FormField)
+  constants/     app-wide constants
   features/
-    conversion/           conversion form, hook, result card
-    fees/                 fees form, table, storage hook + context
-    rates/                ECB XML fetch + rates context
-  pages/                  route entries (IndexPage, FeesPage)
-  App.tsx                 router + providers
-  main.tsx                React entry point
+    conversion/  form, hook, result card
+    fees/        form, table, storage hook + context
+    rates/       ECB XML fetch + context
+  pages/         IndexPage, FeesPage
+  App.tsx        router + providers
+  main.tsx       entry
 ```
