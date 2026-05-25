@@ -10,8 +10,7 @@ interface Props {
 }
 
 export default function CurrencyPairSelect({ from, to, onChangeFrom, onChangeTo, className }: Props) {
-  const { loading } = useRatesContext()
-  const { currencies } = useRatesContext()
+  const { currencies, loading } = useRatesContext()
 
   const fromCurrencies = currencies.filter((currency) => currency !== to)
   const toCurrencies = currencies.filter((currency) => currency !== from)
